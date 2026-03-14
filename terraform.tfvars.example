@@ -1,7 +1,8 @@
 # Copy this file to terraform.tfvars and fill in your values.
 # terraform.tfvars is gitignored and must NEVER be committed to source control.
 
+test_username      = "theodorosgkisis@gmail.com"
 test_user_password = "YourSecurePassword123!"
-sns_topic_arn      = "arn:aws:sns:us-east-1:200363995832:my-test-sns"
+sns_topic_arn      = "arn:aws:sns:us-east-1:123456789012:your-sns-topic-name"
 
 
