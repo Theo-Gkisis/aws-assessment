@@ -242,3 +242,9 @@ The AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `TEST_USER_PA
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key |
 | `TEST_USER_PASSWORD` | Cognito test user password |
 | `SNS_TOPIC_ARN` | Unleash Live verification SNS topic ARN |
+
+### Required GitHub Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TEST_USERNAME` | Cognito test user email | `theodorosgkisis@gmail.com` |
