@@ -1,0 +1,17 @@
+# Terraform state & secrets
+terraform.tfvars
+terraform.tfstate
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+override.tf
+override.tf.json
+
+# Lambda build artifacts
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.env

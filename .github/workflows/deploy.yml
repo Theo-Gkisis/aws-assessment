@@ -1,0 +1,136 @@
+name: Terraform CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  TF_VERSION: "1.7.5"
+  PYTHON_VERSION: "3.12"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  # ── Step 1: Lint & Validate ──────────────────────────────────────────────────
+  lint-validate:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        # Fails if any .tf file is not properly formatted.
+        # Run `terraform fmt -recursive` locally to fix.
+
+      - name: Terraform Init (local backend, no credentials needed)
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  # ── Step 2: Security Scan ────────────────────────────────────────────────────
+  security-scan:
+    name: Security Scan (Checkov)
+    runs-on: ubuntu-latest
+    needs: lint-validate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov on Terraform IaC
+        run: |
+          checkov \
+            --directory . \
+            --framework terraform \
+            --skip-path .terraform \
+            --output cli \
+            --soft-fail
+        # --soft-fail: pipeline does NOT break on findings during review.
+        # Remove --soft-fail in production to enforce security gates.
+
+  # ── Step 3: Terraform Plan ───────────────────────────────────────────────────
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: security-scan
+    env:
+      AWS_ACCESS_KEY_ID:         ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY:     ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION:        us-east-1
+      TF_VAR_test_user_password: ${{ secrets.TEST_USER_PASSWORD }}
+      TF_VAR_sns_topic_arn:      ${{ secrets.SNS_TOPIC_ARN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+        continue-on-error: true
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan.binary -input=false
+        continue-on-error: true
+
+      - name: Convert plan to JSON (for review)
+        run: terraform show -json tfplan.binary > tfplan.json
+        continue-on-error: true
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: tfplan.json
+          retention-days: 7
+        continue-on-error: true
+
+  # ── Step 4: Test Execution Placeholder (Post-Deploy) ─────────────────────────
+  # In a production pipeline this job would have `needs: deploy` (terraform apply).
+  # Here it runs after `plan` as a placeholder to show pipeline architecture.
+  # Credentials are defined but intentionally not provided per assessment spec.
+  integration-tests:
+    name: Integration Tests (Post-Deploy Placeholder)
+    runs-on: ubuntu-latest
+    needs: plan
+    env:
+      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION:    us-east-1
+      TEST_USER_PASSWORD:    ${{ secrets.TEST_USER_PASSWORD }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install test dependencies
+        run: pip install boto3
+
+      - name: Run deployment test script
+        # Requires deployed infrastructure and AWS credentials (post-deploy).
+        # Skipped here — credentials intentionally not provided per assessment spec.
+        run: python scripts/test_deployment.py
+        continue-on-error: true
