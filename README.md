@@ -103,6 +103,8 @@ cp terraform.tfvars.example terraform.tfvars
 # Edit terraform.tfvars and set test_user_password
 ```
 
+> **Password requirements:** Cognito enforces a strong password policy. Your `test_user_password` must be at least 8 characters and include uppercase letters, lowercase letters, numbers, and special characters (e.g. `MyP@ssw0rd!`).
+
 ### 3. Initialise Terraform
 
 ```bash
