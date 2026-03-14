@@ -1,3 +1,8 @@
+variable "test_username" {
+  description = "Email address of the Cognito test user."
+  type        = string
+}
+
 variable "test_user_password" {
   description = "Permanent password for the Cognito test user. Must meet the User Pool password policy."
   type        = string

@@ -7,7 +7,7 @@ module "cognito" {
   }
 
   project_name       = local.project_name
-  email              = local.email
+  email              = var.test_username
   test_user_password = var.test_user_password
 }
 

@@ -27,7 +27,6 @@ import boto3
 # ──────────────────────────────────────────────────────────────────────────────
 
 COGNITO_REGION = "us-east-1"
-TEST_USERNAME  = "theodorosgkisis@gmail.com"
 
 
 def load_dotenv(path=".env"):
@@ -51,11 +50,11 @@ def terraform_outputs():
     return {k: v["value"] for k, v in raw.items()}
 
 
-def get_jwt(client_id, password):
+def get_jwt(client_id, username, password):
     client = boto3.client("cognito-idp", region_name=COGNITO_REGION)
     resp = client.initiate_auth(
         AuthFlow="USER_PASSWORD_AUTH",
-        AuthParameters={"USERNAME": TEST_USERNAME, "PASSWORD": password},
+        AuthParameters={"USERNAME": username, "PASSWORD": password},
         ClientId=client_id,
     )
     return resp["AuthenticationResult"]["IdToken"]
@@ -135,6 +134,11 @@ def print_result(region, r, expected_region=None):
 def main():
     load_dotenv()
 
+    username = os.environ.get("TEST_USERNAME")
+    if not username:
+        print("ERROR: TEST_USERNAME not set (add to .env or export it)")
+        return 1
+
     password = os.environ.get("TEST_USER_PASSWORD")
     if not password:
         print("ERROR: TEST_USER_PASSWORD not set (add to .env or export it)")
@@ -155,9 +159,9 @@ def main():
     print(f"  eu-west-1 : {base_eu}")
 
     # 2. Authenticate
-    print(f"\nAuthenticating as {TEST_USERNAME} ...")
+    print(f"\nAuthenticating as {username} ...")
     try:
-        token = get_jwt(client_id, password)
+        token = get_jwt(client_id, username, password)
     except Exception as e:
         print(f"ERROR: Cognito auth failed: {e}")
         return 1

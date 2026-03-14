@@ -100,7 +100,9 @@ cd aws-assesment
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars and set test_user_password
+# Edit terraform.tfvars and set:
+#   test_username      - Cognito test user email (e.g. user@example.com)
+#   test_user_password - Cognito test user password (must meet Cognito password policy)
 ```
 
 > **Password requirements:** Cognito enforces a strong password policy. Your `test_user_password` must be at least 8 characters and include uppercase letters, lowercase letters, numbers, and special characters (e.g. `MyP@ssw0rd!`).
@@ -143,19 +145,23 @@ The script authenticates with Cognito, then concurrently calls `/greet` and `/di
 pip install boto3
 ```
 
-### Set the test user password
+### Set the test user credentials
 
-Either export it as an environment variable:
+The test script reads credentials from environment variables. Either export them:
 
 ```bash
+export TEST_USERNAME="user@example.com"
 export TEST_USER_PASSWORD="YourPassword123!"
 ```
 
 Or create a `.env` file in the project root:
 
 ```
+TEST_USERNAME=user@example.com
 TEST_USER_PASSWORD=YourPassword123!
 ```
+
+> These must match the values set in `terraform.tfvars` used during `terraform apply`.
 
 ### Run
 
